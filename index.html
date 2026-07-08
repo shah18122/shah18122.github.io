@@ -1,0 +1,234 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smit Shah — Project Shelf</title>
+<meta name="description" content="A live bookshelf of Smit Shah's public GitHub projects, auto-synced from the GitHub API.">
+<style>
+  :root{
+    --wood:#6b4423; --wood-dark:#4a2e18; --wood-light:#8a5a2b;
+    --plank:#3c2412; --ink:#f5ecdd; --muted:#c9b79c;
+    --shelf-h:172px;      /* height of one book row */
+    --plank-h:26px;       /* height of the shelf plank under a row */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Georgia",'Times New Roman',serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 30% 0%, #7c5230 0%, transparent 60%),
+      linear-gradient(160deg,#5a3a20,#3a2412);
+    height:100vh; overflow:hidden;              /* no page scrolling */
+    display:flex; flex-direction:column;
+  }
+
+  /* ---- header ---- */
+  header{
+    flex:0 0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 26px;
+    background:linear-gradient(180deg,rgba(0,0,0,.35),transparent);
+  }
+  header h1{font-size:23px;letter-spacing:.5px;font-weight:700}
+  header h1 small{display:block;font-size:12px;font-weight:400;color:var(--muted);
+    letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+  .home{
+    text-decoration:none;color:#3a2412;background:linear-gradient(180deg,#e9c27a,#cf9b47);
+    padding:9px 18px;border-radius:24px;font-weight:700;font-size:14px;
+    box-shadow:0 3px 0 #9c6b28, 0 5px 10px rgba(0,0,0,.3);
+    transition:transform .12s, box-shadow .12s; white-space:nowrap;
+  }
+  .home:hover{transform:translateY(-2px);box-shadow:0 5px 0 #9c6b28,0 8px 16px rgba(0,0,0,.35)}
+  .home:active{transform:translateY(2px);box-shadow:0 1px 0 #9c6b28}
+
+  /* ---- bookcase ---- */
+  main{
+    flex:1 1 auto; min-height:0;
+    padding:12px 22px 4px;
+    display:flex;
+  }
+  .case{
+    flex:1; min-height:0;
+    border:10px solid transparent;
+    border-image:linear-gradient(var(--wood-light),var(--wood-dark)) 1;
+    background:linear-gradient(180deg,#4d3016,#3a2412);
+    box-shadow:inset 0 0 40px rgba(0,0,0,.55);
+    padding:6px 14px;
+    overflow-y:auto;              /* if repos exceed the shelf, only this area scrolls */
+    overflow-x:hidden;
+  }
+  .books{
+    display:flex; flex-wrap:wrap; align-content:flex-start;
+    gap:var(--plank-h) 12px;
+    /* draws a wooden plank beneath every wrapped row of books */
+    background:repeating-linear-gradient(
+      to bottom,
+      transparent 0 var(--shelf-h),
+      #2c1a0d var(--shelf-h),
+      #5a3a1e calc(var(--shelf-h) + 6px),
+      #2c1a0d calc(var(--shelf-h) + var(--plank-h)));
+    padding-top:2px;
+  }
+
+  /* ---- a book ---- */
+  .book{
+    position:relative;
+    width:52px; height:var(--shelf-h);
+    border:none; cursor:pointer;
+    border-radius:3px 5px 5px 3px;
+    box-shadow:inset -6px 0 8px rgba(0,0,0,.35), inset 3px 0 4px rgba(255,255,255,.15),
+      2px 4px 7px rgba(0,0,0,.4);
+    color:#fff; font-family:inherit;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .14s ease, margin .14s ease;
+    align-self:flex-end;          /* stand books on the plank */
+  }
+  .book:hover, .book:focus-visible{
+    transform:translateY(-16px) rotate(-1deg);
+    outline:none; z-index:3;
+  }
+  .book .spine{
+    writing-mode:vertical-rl; text-orientation:mixed;
+    transform:rotate(180deg);
+    font-size:12.5px; font-weight:700; letter-spacing:.3px;
+    max-height:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    text-shadow:0 1px 2px rgba(0,0,0,.5);
+  }
+  .book .top{position:absolute;top:6px;left:0;right:0;text-align:center;
+    font-size:10px;color:#ffe9b0;font-family:system-ui,sans-serif}
+  .book .dot{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.2)}
+
+  /* ---- info bar ---- */
+  footer{
+    flex:0 0 auto;
+    background:linear-gradient(180deg,transparent,rgba(0,0,0,.4));
+    padding:10px 26px 14px;
+    min-height:58px;
+    display:flex; align-items:center; gap:16px;
+  }
+  #info{flex:1;min-width:0}
+  #info .name{font-size:16px;font-weight:700}
+  #info .desc{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis}
+  #info .meta{font-size:12px;color:#e9c27a;font-family:system-ui,sans-serif;margin-top:2px}
+  #count{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;
+    text-align:right;white-space:nowrap}
+  #count b{color:var(--ink);font-size:15px}
+
+  .state{margin:auto;text-align:center;color:var(--muted);font-size:16px;padding:30px}
+  .state a{color:#e9c27a}
+  @media (max-width:560px){
+    header h1{font-size:18px}
+    #info .desc{display:none}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>📚 Smit Shah — Project Shelf
+      <small>public GitHub repos · live-synced</small></h1>
+    <a class="home" href="https://www.thesmitshah.com">🏠 Home</a>
+  </header>
+
+  <main>
+    <div class="case" id="case">
+      <div class="state" id="state">Opening the shelf…</div>
+      <div class="books" id="books" hidden></div>
+    </div>
+  </main>
+
+  <footer>
+    <div id="info"><div class="name">Hover a book to preview a project</div>
+      <div class="meta">Click any spine to open it on GitHub ↗</div></div>
+    <div id="count" hidden></div>
+  </footer>
+
+<script>
+const USER = "shah18122";
+
+// A spine colour chosen deterministically from the repo name.
+const SPINES = ["#8d3b3b","#7b3f00","#4b6043","#2f4858","#5b2c6f","#7d5a2e",
+  "#6a4c93","#3b5323","#8a4b08","#455a64","#803d3b","#33691e","#4e342e",
+  "#37474f","#5d4037","#264653","#6d4c41","#7a4419"];
+function spineColor(name){
+  let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))>>>0;
+  return SPINES[h % SPINES.length];
+}
+const LANG = {JavaScript:"#f1e05a",Python:"#3572A5",HTML:"#e34c26",CSS:"#563d7c",
+  TypeScript:"#3178c6",Java:"#b07219",C:"#555",Shell:"#89e051",Solidity:"#AA6746",
+  "Jupyter Notebook":"#DA5B0B",PHP:"#4F5D95",Go:"#00ADD8",Ruby:"#701516"};
+
+const $ = id => document.getElementById(id);
+const esc = s => { const d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; };
+
+function showInfo(r){
+  $("info").innerHTML =
+    `<div class="name">${esc(r.name)}</div>
+     <div class="desc">${esc(r.description || "No description")}</div>
+     <div class="meta">${r.language?esc(r.language)+" · ":""}⭐ ${r.stargazers_count}
+        · updated ${new Date(r.updated_at).toLocaleDateString()}</div>`;
+}
+
+async function load(){
+  try{
+    // Unauthenticated GitHub API returns ONLY public repos. Fetched on every
+    // load, so a deleted repo disappears here automatically.
+    const res = await fetch(
+      `https://api.github.com/users/${USER}/repos?per_page=100&sort=updated`,
+      {headers:{Accept:"application/vnd.github+json"}});
+    if(!res.ok) throw new Error(`GitHub API ${res.status}`);
+    let repos = await res.json();
+    repos = repos.filter(r => !r.private);          // public only (belt & braces)
+    repos.sort((a,b)=> b.stargazers_count - a.stargazers_count
+                       || new Date(b.updated_at) - new Date(a.updated_at));
+
+    if(!repos.length){ $("state").textContent = "No public repositories yet."; return; }
+
+    const books = $("books");
+    books.innerHTML = repos.map(r=>{
+      const col = spineColor(r.name);
+      const dot = LANG[r.language] || "#999";
+      return `<a class="book" href="${r.html_url}" target="_blank" rel="noopener"
+                 style="background:linear-gradient(90deg,${col},${shade(col,-18)})"
+                 data-i="${repos.indexOf(r)}" aria-label="${esc(r.name)}">
+                ${r.stargazers_count?`<span class="top">★${r.stargazers_count}</span>`:""}
+                <span class="spine">${esc(r.name)}</span>
+                <span class="dot" style="background:${dot}"></span>
+              </a>`;
+    }).join("");
+
+    books.querySelectorAll(".book").forEach(el=>{
+      const r = repos[+el.dataset.i];
+      el.addEventListener("mouseenter", ()=>showInfo(r));
+      el.addEventListener("focus", ()=>showInfo(r));
+    });
+
+    $("state").hidden = true;
+    books.hidden = false;
+    const c = $("count");
+    c.hidden = false;
+    c.innerHTML = `<b>${repos.length}</b> public repos<br>auto-synced from GitHub`;
+  }catch(err){
+    $("state").innerHTML =
+      `Couldn't reach the GitHub API (${esc(err.message)}).<br>
+       GitHub limits anonymous requests to 60/hour — try again shortly, or
+       browse directly at <a href="https://github.com/${USER}">github.com/${USER}</a>.`;
+  }
+}
+
+// darken/lighten a hex colour for the spine gradient
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+  return "#"+(r<<16|g<<8|b).toString(16).padStart(6,"0");
+}
+
+load();
+</script>
+</body>
+</html>
