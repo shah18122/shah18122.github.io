@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://shah18122.github.io/sitemap.xml
